@@ -1,0 +1,27 @@
+<h1>Registracija novog korisnika</h1>
+<form action="<?php echo $router->pathFor('registracija'); ?>" method="POST">
+	<label for="email">Email</label>
+	<input type="email" name="email" id="email" placeholder="email" autofocus value="<?php echo isset($staro['email']) ? $staro['email'] : ''; ?>">
+	<?php
+	if(isset($greske['email'])) {
+		echo '<span style="color: red; font-size: 12px;">' . $greske['email'] . '</span>';
+	}
+	?><br>
+	<label for="lozinka">Lozinka</label>
+	<input type="password" name="lozinka" id="lozinka" placeholder="lozinka">
+	<?php
+	if(isset($greske['lozinka'])) {
+		echo '<span style="color: red; font-size: 12px;">' . $greske['lozinka'] . '</span>';
+	}
+	?><br>
+	<label for="lozinka_p">Potvrda</label>
+	<input type="password" name="lozinka_p" id="lozinka_p" placeholder="potvrda lozinke">
+	<?php
+	if(isset($greske['lozinka_p'])) {
+		echo '<span style="color: red; font-size: 12px;">' . $greske['lozinka_p'] . '</span>';
+	}
+	?><br><br>
+	<input type="submit" value="Registruj se"> &nbsp;&nbsp;&nbsp;&nbsp;
+	<a href="<?php echo $router->pathFor('pocetna'); ?>">Otkazi</a>
+	<?php echo $csrf ? $csrf : '' ?>
+</form>

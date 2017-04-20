@@ -1,0 +1,266 @@
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/styles/monokai-sublime.min.css">
+<h1>Medoo</h1>
+<a href="http://medoo.in/doc" target="_blank">Medoo dokumentacija</a> | 
+<a href="<?php echo $router->pathFor('pocetna'); ?>">Pocetna</a><br>
+<h2>Inicijalizacija i konfiguracija</h2>
+<pre><code>$database = new Medoo([
+	// required
+	'database_type' => 'mysql',
+	'database_name' => 'name',
+	'server' => 'localhost',
+	'username' => 'your_username',
+	'password' => 'your_password',
+	'charset' => 'utf8',
+ 
+	// [optional]
+	'port' => 3306,
+ 
+	// [optional] Table prefix
+	'prefix' => 'PREFIX_',
+ 
+	// [optional] MySQL socket (shouldn't be used with server and port)
+	'socket' => '/tmp/mysql.sock',
+ 
+	// [optional] driver_option for connection, read more from http://www.php.net/manual/en/pdo.setattribute.php
+	'option' => [
+		PDO::ATTR_CASE => PDO::CASE_NATURAL
+	],
+ 
+	// [optional] Medoo will execute those commands after connected to the database for initialization
+	'command' => [
+		'SET SQL_MODE=ANSI_QUOTES'
+	]
+]);</code></pre>
+<h2>WHERE</h2>
+<h3>Osnovni uslovi</h3>
+<p>Operatori se upisuju na kraju naziva polja u uglastim zagradama (<code>'kategorija_id<span style="color: red;">[>]</span>' => 1</code>). Podrazumevani operator je jednako <code>[=]</code>, a ostali operatori mogu biti sledeci:</p>
+<ul>
+	<li><code>[!]</code> - negacija (<code>!=, NOT IN, IS NOT NULL</code>)</li>
+	<li><code>[&gt;], [&lt;]</code> - vece i manje od</li>
+	<li><code>[&gt;=], [&lt;=] - vece ili jednako i manje ili jednako</code></li>
+	<li><code>[&lt;&gt;]</code> - izmedju (BETWEEN), parametar je niz od dva clana, vazi za brojeve i datume, ukljucuje i parametre</li>
+	<li><code>[&gt;&lt;]</code> - nije izmedju (NOT BETWEEN), parametar je niz od dva clana, vazi za brojeve i datume, iskljucuje parametre</li>
+</ul>
+<pre><code>$db->select(
+	'clanci',
+	['naslov', 'kategorija_id'],
+	['kategorija_id' => 1]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov","kategorija_id" FROM "clanci" WHERE "kategorija_id" = 1</p>
+<pre><code>$db->select(
+	'clanci',
+	'*',
+	['kategorija_id[<=]' => 2]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT * FROM "clanci" WHERE "kategorija_id" <= 2</p>
+<pre><code>$db->select(
+	'clanci',
+	'kategorija_id',
+	['kategorija_id[!]' => 2]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE "kategorija_id" != 2</p>
+<pre><code>$db->select(
+	'clanci',
+	'kategorija_id',
+	['kategorija_id[&lt;&gt;]' => [2,3]]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE "kategorija_id" IN (2,3)</p>
+<pre><code>$db->select(
+	'clanci',
+	'kategorija_id',
+	['kategorija_id[&gt;&lt;]' => [2,3]]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE ("kategorija_id" NOT BETWEEN 2 AND 3)</p>
+<pre><code>$db->select(
+	'clanci',
+	'kategorija_id',
+	['OR' => [
+			'kategorija_id[!]' => 1,
+			'naslov' => 'dd',
+		],
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE "kategorija_id" != 1 OR "naslov" = 'dd'</p>
+<pre><code>$db->select(
+	'kategorije',
+	'naziv',
+	['id' => $db->select('clanci', 'kategorija_id', ['slug' => 'opet'])]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE "slug" = 'opet'</p>
+<p>Izaberi naziv kategorije gde je id kategorije jednak kategorija_id clanka koji ima slug opet.</p>
+<h3>Relativni uslovi</h3>
+<p>Relativni uslovi mogu da opisu slozenije uslove izmedju podataka. Mogu se koristiti <code>AND</code> i <code>OR</code> za pravljenje relativnih uslova.</p>
+<h4>Osnovni</h4>
+<pre><code>$db->select(
+	'clanci',
+	'kategorija_id',
+	['AND' => [
+			'kategorija_id[!]' => 1,
+			'slug' => 'opet',
+		],
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE "kategorija_id" != 1 AND "slug" = 'opet'</p>
+<p>Povezivanje uslova se automatski vrsi sa <code>AND</code> tako da je sledeci upit identican prethodnom</p>
+<pre><code>$db->select(
+	'clanci',
+	'kategorija_id',
+	[
+		'kategorija_id[!]' => 1,
+		'slug' => 'opet',
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE "kategorija_id" != 1 AND "slug" = 'opet'</p>
+<pre><code>$db->select(
+	'clanci',
+	'kategorija_id',
+	['OR' => [
+			'kategorija_id[!]' => 1,
+			'slug' => 'opet',
+		],
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "kategorija_id" FROM "clanci" WHERE "kategorija_id" != 1 OR "slug" = 'opet'</p>
+<h4>Kombinovani</h4>
+<pre><code>$db->select(
+	'clanci',
+	'naslov',
+	[ 'AND' => [
+			'OR' => [
+				'kategorija_id[!]' => 1,
+				'slug' => 'opet',
+			],
+			'id' => 3,
+		]
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov" FROM "clanci" WHERE ("kategorija_id" != 1 OR "slug" = 'opet') AND "id" = 3</p>
+<h3 style="color: red;">VAZNO</h3>
+<p>Kada postoje dva ili vise <code>AND</code> ili <code>OR</code> uslova u nizu neophodno je na njih dodati komentar tako da budu razliciti da ne bi doslo do prepisivanja u nizu.</p>
+<p>Sledeci oblik dovodi do greske, odnosno vidi se samo drugi <code>OR</code> uslov</p>
+<pre><code>$db->select(
+	'clanci',
+	'naslov',
+	[ 'AND' => [
+			'OR' => [
+				'kategorija_id[!]' => 1,
+				'slug' => 'opet',
+			],
+			'OR' => [
+				'naslov' => 'Test',
+				'slug' => 'dd',
+			],
+		]
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov" FROM "clanci" WHERE ("naslov" = 'Test' OR "slug" = 'dd')</p>
+<p>Da bi se ovo ispravilo dodaju se komentari koji se inace mogu dodati na bilo koji <code>AND</code> ili <code>OR</code> uslov.</p>
+<pre><code>$db->select(
+	'clanci',
+	'naslov',
+	[ 'AND #Komentar' => [
+			'OR #Prvi uslov' => [
+				'kategorija_id[!]' => 1,
+				'slug' => 'opet',
+			],
+			'OR #Drugi uslov' => [
+				'naslov' => 'Test',
+				'slug' => 'dd',
+			],
+		]
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov" FROM "clanci" WHERE (("kategorija_id" != 1 OR "slug" = 'opet') AND ("naslov" = 'Test' OR "slug" = 'dd'))</p>
+<h3>LIKE uslovi</h3>
+<p>LIKE uslovi se mogu koristiti kao osnovni i kao relativni, dodavanjem <code>[~]</code>.</p>
+<pre><code>$db->select(
+	'clanci',
+	'id',
+	['naslov[~]' => 'pet']
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "id" FROM "clanci" WHERE ("naslov" LIKE '%pet%')</p>
+<pre><code>$db->select(
+	'clanci',
+	'id',
+	['naslov[~]' => ['pet', 'ica', 'ova']]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "id" FROM "clanci" WHERE ("naslov" LIKE '%pet%' OR "naslov" LIKE '%ica%' OR "naslov" LIKE '%ova%')</p>
+<pre><code>$db->select(
+	'clanci',
+	'id',
+	['naslov[!~]' => 'pet']
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "id" FROM "clanci" WHERE ("naslov" NOT LIKE '%pet%')</p>
+<pre><code>$db->select(
+	'clanci',
+	'id',
+	['naslov[!~]' => '_pet']
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "id" FROM "clanci" WHERE ("naslov" NOT LIKE '_pet')</p>
+<pre><code>$db->select(
+	'clanci',
+	'id',
+	['naslov[~]' => '[ASD]ad']
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "id" FROM "clanci" WHERE ("naslov" LIKE '[ASD]ad')</p>
+<pre><code>$db->select(
+	'clanci',
+	'id',
+	['naslov[~]' => '[!ASD]ad']
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "id" FROM "clanci" WHERE ("naslov" LIKE '[!ASD]ad')</p>
+<h3>ORDER uslovi</h3>
+<pre><code>$db->select(
+	'clanci',
+	'naslov',
+	['ORDER' => ['id' => 'DESC']]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov" FROM "clanci" ORDER BY "id" DESC</p>
+<pre><code>$db->select(
+	'clanci',
+	'naslov',
+	['ORDER' => [
+			'id' => 'DESC',
+			'naslov' => 'ASC',
+			'slug',
+		]
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov" FROM "clanci" ORDER BY "id" DESC,"naslov" ASC,"slug"</p>
+<h3>Pretraga vise polja</h3>
+<pre><code>$db->select(
+	'clanci',
+	'id',
+	[ 'MATCH' => [
+				'columns' => ['naslov', 'sadrzaj'],
+				'keyword' => 'php'
+			]
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "id" FROM "clanci" WHERE MATCH ("naslov", "sadrzaj") AGAINST ('php')</p>
+<h3>SQL funkcije</h3>
+<p>Da bi se koristile SQL funkcije potrebno je ispred imena polja staviti <code>#</code> da se ne bi dodavali znaci navoda. SQL finkcije moraju da budu napisane velikim slovima</p>
+<pre><code>$db->select(
+	'clanci',
+	'naslov',
+	['#created_at' => 'NOW()']
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov" FROM "clanci" WHERE "created_at" = NOW()</p>
+<h3>Dodatni uslovi</h3>
+<pre><code>$db->select(
+	'clanci',
+	'naslov',
+	[
+		'GROUP' => 'kategorija_id',
+		'HAVING' => ['id[>]' => 5],
+		'LIMIT' => [20,10],
+	]
+);</code></pre>
+<p><strong>SQL:</strong> SELECT "naslov" FROM "clanci" GROUP BY "kategorija_id" HAVING "id" > 5 LIMIT 20,10</p>
+<h2>SELECT</h2>
+<p><code>select()</code> moze da ima tri ili cetiri parametra.</p>
+<p>Sa tri parametra: naziv tabele(string), polje(string) ili polja(niz) i uslov(niz)</p>
+<p>Sa cetiri parametra: naziv tabele(string), spajanje(niz) polje(string) ili polja(niz) i uslov(niz)</p>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>

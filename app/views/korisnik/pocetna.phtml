@@ -1,0 +1,5 @@
+<h1>Korisnik</h1>
+<?php echo '<p>Korisnik: ' . $auth['korisnik']['email'] . '</p>'; ?>
+<a href="<?php echo $router->pathFor('pocetna'); ?>">Pocetna</a> | 
+<a href="<?php echo $router->pathFor('korisnik.promena-lozinke'); ?>">Promena lozinke</a> | 
+<a href="<?php echo $router->pathFor('odjava'); ?>">Odjava</a>

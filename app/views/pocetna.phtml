@@ -1,0 +1,25 @@
+<h1>Pocetna</h1>
+<a href="<?php echo $router->pathFor('medoo'); ?>">Medoo</a><br><br>
+<?php if(!$auth['prijavljen']) { ?>
+    <a href="<?php echo $router->pathFor('registracija'); ?>">Registracija</a> |
+    <a href="<?php echo $router->pathFor('prijava'); ?>">Prijava</a>
+<?php } else { ?>
+    <a href="<?php echo $router->pathFor('odjava'); ?>">Odjava</a> | 
+    <a href="<?php echo $router->pathFor('korisnik.pocetna'); ?>">Korisnik</a>
+<?php } ?>
+
+<p>Minimalna instalacija Slim-a. Iskoriscen je samo slim, php-view i csrf. Fajl <code>composer.json</code>:</p>
+<pre><code>{
+    "require": {
+        "slim/slim": "^3.0",
+        "slim/php-view": "^2.2",
+        "slim/csrf": "^0.8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app"
+        }
+    }
+}</code></pre>
+<p>Od ostalih komponenti, za bazu podataka se koristi klasa Medoo koja nasledjuje PDO klasu.</p>
+<p>Za sva dodatna pitanja pogledati sam projekat :P</p>
